@@ -1,8 +1,9 @@
 var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = false, clearedScene = true, tries = 0;
 
-for (i=0;i<6; i++) {
+// todel, for test purposes
+for (i=0;i<3; i++) {
   var p = document.createElement('p');
-  p.innerText = "this is " + i + "paragraph!";
+  p.textContent = "this is " + i + " paragraph!";
   document.body.appendChild(p);
 };
 
@@ -80,7 +81,7 @@ startButton.onclick = function(){
   if (blocked) { return false};
   blockScene(true);
   tries++;
-  triesText.innerText = 'Tries: ' + tries;
+  triesText.textContent = 'Tries: ' + tries;
   clearScene();
   fire(laserGun.barrelCoords().x, laserGun.barrelCoords().y, laserGun.rotation);
 };
@@ -93,7 +94,7 @@ stopButton.onclick = function(){
 menu.appendChild(stopButton);
 
 var triesText = document.createElement('p');
-triesText.innerText = 'Tries: ' + tries;
+triesText.textContent = 'Tries: ' + tries;
 menu.appendChild(triesText);
 
 // Lasergun picture
@@ -219,7 +220,8 @@ function fire(x, y, deg, lastMirrorFaced) {
              getNewLaserAngle(laser.rotation, laser.endPointElem.rotation), laser.endPointElem);
         break;
       case 'target':
-        alert("You've hit the target on " + tries + " try!"); //todel        
+        alert("You've hit the target on " + tries + " try!"); //todel   
+        tries = 0;     
         blockScene(false);
         break;
       case 'error':              
@@ -459,9 +461,9 @@ document.onclick = function(e) {
 
 
 
-
-for (i=0;i<6; i++) {
+// todel, for test purposes
+for (i=0;i<3; i++) {
   var p = document.createElement('p');
-  p.innerText = "this is " + i + "paragraph!";
+  p.textContent = "this is " + i + " paragraph!";
   document.body.appendChild(p);
 };
