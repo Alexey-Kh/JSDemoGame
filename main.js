@@ -1,4 +1,4 @@
-var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = false;
+var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = false, clearedScene = true, tries = 0;
 
 for (i=0;i<6; i++) {
   var p = document.createElement('p');
@@ -23,8 +23,9 @@ function Background() {
                               position: absolute; \
                               display: inline-block; \
                               float: left; \
-                              border: 1px solid black;"
+                              border: 2px solid black;"
   background.getHeight = function () { return parseInt(this.style.height) };
+  background.getWidth = function () { return parseInt(this.style.width) };
   background.getBorderWidth = function () { return parseInt(this.style.borderWidth) };
   // Get page coordinates of top and left
   background.getPageCoordsOf = function () {
@@ -61,26 +62,44 @@ var menu = Menu();
 container.appendChild(menu);
 container.style.height = background.getHeight() + "px";
 
-// Start button
-var startButton = document.createElement('input');
-startButton.id = 'start-button';
-startButton.type = 'button';
-startButton.value = 'Start';
-startButton.style.cssText = "border: 1px solid black; \
-                             border-radius: 5px; \
-                             text-align: center; \
-                             font-size: 1em;";
+// Button generator
+function Button(id, value) {
+
+  var button = document.createElement('input');
+  button.id = id;
+  button.type = 'button';
+  button.value = value;
+  button.style.cssText = "border: 1px solid black; \
+                          border-radius: 5px; \
+                          text-align: center; \
+                          font-size: 1em;";
+  return button;
+}
+var startButton = Button('start-button', 'Start')
 startButton.onclick = function(){
   if (blocked) { return false};
   blockScene(true);
+  tries++;
+  triesText.innerText = 'Tries: ' + tries;
   clearScene();
   fire(laserGun.barrelCoords().x, laserGun.barrelCoords().y, laserGun.rotation);
 };
 menu.appendChild(startButton);
 
+var stopButton = Button('stop-button', 'Stop');
+stopButton.onclick = function(){
+  clearScene();
+};
+menu.appendChild(stopButton);
+
+var triesText = document.createElement('p');
+triesText.innerText = 'Tries: ' + tries;
+menu.appendChild(triesText);
+
 // Lasergun picture
 function LaserGun() {
   var laserGun = document.createElement('img');
+  laserGun.className = 'lasergun';
   laserGun.rotation = -90;
   laserGun.src = 'assets/lasergun.png';
   var width = 45;  
@@ -112,6 +131,24 @@ function LaserGun() {
 }
 var laserGun = LaserGun();
 background.appendChild(laserGun);
+
+// Target generator
+function Target() {
+  var target = document.createElement('div');
+  target.className = 'target';
+  var size = 40;
+  target.style.cssText = 'width: ' + size + 'px; \
+                          height: ' + size + 'px; \
+                          position: absolute; \
+                          z-index: 50; \
+                          background-color: red;'
+  target.style.left = background.getWidth() - size;  
+  target.style.top = background.getHeight() - size;
+  return target;
+}
+
+var target = Target();
+background.appendChild(target);
 
 // *Functions*
 
@@ -159,13 +196,14 @@ function isInWorkArea(x, y) {
 
 // Launches the process of drawing lasers
 function fire(x, y, deg, lastMirrorFaced) {
+  clearedScene = false;
   lastMirrorFaced = lastMirrorFaced || null;
   var laser = new Laser(x, y, deg);
   background.appendChild(laser);
   var laserDrawer = function(laser, lastMirrorFaced) {
     // Checks whether laser is on the background or not, stops drawing if not
     if (!isInWorkArea(laser.endPointX, laser.endPointY)) { 
-      alert("Point is outside of the background"); // delete later
+      // alert("Point is outside of the background"); // todel
       blockScene(false);
       return false;
     };
@@ -173,16 +211,23 @@ function fire(x, y, deg, lastMirrorFaced) {
     // Checks if mirror was faced. If yes, starts drawing new laser. If no, continues drawing current laser.
     switch (laser.checkForElement(lastMirrorFaced)) {
       case false:
-        window.setTimeout(laserDrawer, 10, laser, lastMirrorFaced)
-        break
+        window.setTimeout(laserDrawer, 5, laser, lastMirrorFaced);
+        break;
       case 'mirror':
         fire(laser.endPointX - background.getPageCoordsOf().left - background.getBorderWidth(), 
              laser.endPointY - background.getPageCoordsOf().top - background.getBorderWidth(),
-             getNewLaserAngle(laser.rotation, laser.endPointElem.rotation), laser.endPointElem)
-        break
-      case 'wall':
+             getNewLaserAngle(laser.rotation, laser.endPointElem.rotation), laser.endPointElem);
+        break;
+      case 'target':
+        alert("You've hit the target on " + tries + " try!"); //todel        
         blockScene(false);
-        return false
+        break;
+      case 'error':              
+        blockScene(false);
+        clearScene();
+        break;
+      default:      
+        blockScene(false);
     };
   };
   window.setTimeout(laserDrawer, 0, laser, lastMirrorFaced);
@@ -207,8 +252,11 @@ function toRad(deg) {
 
 // Clears the scene, deleting all lasers
 function clearScene() {
+  // clearedScene is used in order to 
+  if (clearedScene) { return false };
   var lasers = document.getElementsByClassName('laser');
   while (lasers[0]) { lasers[0].parentNode.removeChild(lasers[0]) };
+  clearedScene = true;
 }
 
 // Blocks the scene if true is passed, unblocks if false
@@ -276,7 +324,11 @@ for (i=1; i<=4; i++) {
   var mirror = new Mirror;
   background.appendChild(mirror);
   // Drag'n'drop using jQuery UI
-  $('#mirror'+i).draggable();
+  $('#mirror'+i).draggable({
+    drag: function(event, ui) {
+      clearScene();
+    }
+  });
 };
 background.appendChild(new Wall(250,0,90));
 background.appendChild(new Wall(500,300,0));
@@ -289,7 +341,7 @@ function Laser(x, y, rotation) {
 
   // Laser object methods
   laser.increaseHeight = function() {
-    this.style.height = (parseInt(this.style.height) + 2) + 'px';
+    this.style.height = (parseInt(this.style.height) + 1) + 'px';
   };
 
   // Optimize rotation to the angle in range [0...360] degrees
@@ -335,11 +387,20 @@ function Laser(x, y, rotation) {
     var endCoords = toPageCoords(clientX, clientY);
     this.endPointX = endCoords.pageX;
     this.endPointY = endCoords.pageY;
-    if ((currentElem.className.search('mirror') > -1) && ( lastMirrorFaced !== currentElem )) {
-      //alert(lastMirrorFaced + " " + currentElem); // delete later
+    try {
+      var elemClass = currentElem.className;
+    } catch(e) {
+      if (!e instanceof TypeError) { throw e };
+      alert("Error! Laser is outside of the client window!"); //todel
+      return 'error';
+    }
+    if ((elemClass.search('mirror') > -1) && ( lastMirrorFaced !== currentElem )) {
+      //alert(lastMirrorFaced + " " + currentElem); // todel
       return 'mirror';
-    } else if (currentElem.className.search('wall') > -1) {
+    } else if (elemClass.search('wall') > -1) {
       return 'wall';
+    } else if (elemClass.search('target') > -1) {
+      return 'target';
     } else {
       return false;
     }
