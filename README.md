@@ -5,9 +5,9 @@ The game counts tries before hitting the target, so players could compete.
 
 ## Controls
 
-Player can drag mirrors using the mouse.
-Player can rotate laser gun and mirrors. For that required object must be selected by left mouse click and then rotated with right and left arrow keys on the keyboard.
-When mirrors are located and laser gun is pointed, "Start" button should be pressed. "Stop" button stops the process.
+ - Player can drag mirrors using the mouse.
+ - Player can rotate laser gun and mirrors. For that required object must be selected by left mouse click and then rotated with right and left arrow keys on the keyboard.
+ - When mirrors are located and laser gun is pointed, "Start" button should be pressed. "Stop" button stops the process.
 
 ## How to install
 

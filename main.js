@@ -1,7 +1,7 @@
 var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = false, clearedScene = true, tries = 0;
 
 // todel, for test purposes
-for (i=0;i<3; i++) {
+for (var i=0;i<3; i++) {
   var p = document.createElement('p');
   p.textContent = "this is " + i + " paragraph!";
   document.body.appendChild(p);
@@ -25,16 +25,6 @@ function Background() {
                               display: inline-block; \
                               float: left; \
                               border: 2px solid black;"
-  background.getHeight = function () { return parseInt(this.style.height) };
-  background.getWidth = function () { return parseInt(this.style.width) };
-  background.getBorderWidth = function () { return parseInt(this.style.borderWidth) };
-  // Get page coordinates of top and left
-  background.getPageCoordsOf = function () {
-    var backClientCoords = this.getBoundingClientRect();
-    var backLeftTop = toPageCoords(backClientCoords.left, backClientCoords.top);
-    var backRightBot = toPageCoords(backClientCoords.right, backClientCoords.bottom);
-    return { left: backLeftTop.pageX, top: backLeftTop.pageY, right: backRightBot.pageX, bottom: backRightBot.pageY }
-  }
   return background;
 }
 var background = Background();
@@ -47,9 +37,9 @@ function Menu() {
   menu.id = 'menu';
   menu.style.cssText = "background-color: #E4E4E4; \
                         width: 300px; \
-                        height: " + background.getHeight() + "px; \
-                        left: " + background.getPageCoordsOf().right + "px; \
-                        top: " + background.getPageCoordsOf().top + "px; \
+                        height: " + getHeight(background) + "px; \
+                        left: " + getBoundingPageRect(background).right + "px; \
+                        top: " + getBoundingPageRect(background).top + "px; \
                         margin-left: 5px; \
                         z-index: 0; \
                         position: absolute; \
@@ -61,7 +51,7 @@ function Menu() {
 }
 var menu = Menu();
 container.appendChild(menu);
-container.style.height = background.getHeight() + "px";
+container.style.height = getHeight(background) + "px";
 
 // Button generator
 function Button(id, value) {
@@ -105,7 +95,7 @@ function LaserGun() {
   laserGun.src = 'assets/lasergun.png';
   var width = 45;  
   // height/width = 1.31
-  var height = width*1.31;
+  var height = Math.round(width*1.31);
   var left = (height-width)/2;
   laserGun.style.cssText = "width: " + width + "px; \
                             height: " + height + "px; \
@@ -143,8 +133,8 @@ function Target() {
                           position: absolute; \
                           z-index: 50; \
                           background-color: red;'
-  target.style.left = background.getWidth() - size;  
-  target.style.top = background.getHeight() - size;
+  target.style.left = getWidth(background) - size;  
+  target.style.top = getHeight(background) - size;
   return target;
 }
 
@@ -168,7 +158,7 @@ function toPageCoords(clientX, clientY) {
     var pageY = clientY + scrollTop - clientTop;
     var pageX = clientX + scrollLeft - clientLeft;
 
-    return { pageX: Math.round(pageX), pageY: Math.round(pageY) };
+    return { pageX: pageX, pageY: pageY };
 }
 
 // function isChildOf(parent, child) {
@@ -184,11 +174,12 @@ function toPageCoords(clientX, clientY) {
 
 // Checks if the point is on the background
 function isInWorkArea(x, y) {
-  var back = background.getPageCoordsOf();
-  var left = back.left + background.getBorderWidth();
-  var top = back.top + background.getBorderWidth();
-  var right = back.right - background.getBorderWidth();
-  var bottom = back.bottom - background.getBorderWidth();
+  var back = getBoundingPageRect(background);
+  var backBrdW = getBorderWidth(background)
+  var left = back.left + backBrdW;
+  var top = back.top + backBrdW;
+  var right = back.right - backBrdW;
+  var bottom = back.bottom - backBrdW;
   if (x >= left && x <= right && y >= top && y <= bottom) {
     return true;
   }
@@ -215,9 +206,9 @@ function fire(x, y, deg, lastMirrorFaced) {
         window.setTimeout(laserDrawer, 5, laser, lastMirrorFaced);
         break;
       case 'mirror':
-        fire(laser.endPointX - background.getPageCoordsOf().left - background.getBorderWidth(), 
-             laser.endPointY - background.getPageCoordsOf().top - background.getBorderWidth(),
-             getNewLaserAngle(laser.rotation, laser.endPointElem.rotation), laser.endPointElem);
+        fire(laser.endPointX - getBoundingPageRect(background).left - getBorderWidth(background), 
+             laser.endPointY - getBoundingPageRect(background).top - getBorderWidth(background),
+             newLaserAngle(laser, laser.endPointElem), laser.endPointElem);
         break;
       case 'target':
         alert("You've hit the target on " + tries + " try!"); //todel   
@@ -235,22 +226,142 @@ function fire(x, y, deg, lastMirrorFaced) {
   window.setTimeout(laserDrawer, 0, laser, lastMirrorFaced);
 }
 
+// Optimize rotation to the angle in range [0...360] degrees
+function optimizeRotation(rotation) {
+  var optimizedRotation = rotation;
+  while (optimizedRotation < 0) { optimizedRotation += 360 };
+  while (optimizedRotation >= 360) { optimizedRotation -= 360 };
+  return optimizedRotation;
+};
+
+// Calculate the coordinates of the rotated point. `pivot' is the origin of the rotation
+function rotatedPointCoords(pivot, point, angle) {
+  // Rotate clockwise, angle in radians
+  var x = (Math.cos(angle) * (point.x - pivot.x)) -
+           (Math.sin(angle) * (point.y - pivot.y)) +
+           pivot.x;
+  var y = (Math.sin(angle) * (point.x - pivot.x)) +
+           (Math.cos(angle) * (point.y - pivot.y)) +
+           pivot.y;
+  return {x: x, y: y};
+};
+
+// Return array with coordinates of element's rectangle vertices
+function verticesCoords(elem) {
+  var elRect = getBoundingPageRect(elem);
+  var pivot = {
+    x: elRect.left + elRect.width/2,
+    y: elRect.top + elRect.height/2
+  };
+  // Get default width and height of element (with 0 degrees rotation). 
+  var defWidth = getWidth(elem);
+  var defHeight = getHeight(elem);  
+  // Calculate default element's rectangle vertices BEFORE rotation.
+  var defV1 = {
+    x: pivot.x - defWidth/2,
+    y: pivot.y - defHeight/2
+  };
+  var defV2 = {
+    x: pivot.x + defWidth/2,
+    y: pivot.y - defHeight/2
+  };
+  var defV3 = {
+    x: pivot.x + defWidth/2,
+    y: pivot.y + defHeight/2
+  };
+  var defV4 = {
+    x: pivot.x - defWidth/2,
+    y: pivot.y + defHeight/2
+  };
+  var elRot = elem.rotation;
+  // If rotation angle is 0, return array with default vertices
+  if (elRot === 0) { return [defV1, defV2, defV3, defV4] };
+  // Calculate element's rectangle vertices AFTER rotation.
+  var v1 = rotatedPointCoords(pivot, defV1, toRad(elRot));
+  var v2 = rotatedPointCoords(pivot, defV2, toRad(elRot));
+  var v3 = rotatedPointCoords(pivot, defV3, toRad(elRot));
+  var v4 = rotatedPointCoords(pivot, defV4, toRad(elRot));
+  return [v1, v2, v3, v4];
+};
+
+// Return true if the point x,y is inside the polygon, or false if it is not.
+// testP - object with test point coordinates x and y
+// polPs - array of objects with polygon points coordinates [{x, y},{..},{..}]
+function pointInPolygon(polPs, testP) {
+  // Add 5th element polPs[4]===polPs[0] into array, in order to be able to compare ([0] and [3]) pair.
+  polPs.push(polPs[0]);
+  var c = false;
+  for (var i = 0; i < polPs.length - 1; i++) {
+    var j = i + 1;
+    if ((( polPs[i].y <= testP.y && testP.y < polPs[j].y) || (polPs[j].y <= testP.y && testP.y < polPs[i].y )) &&
+      (testP.x > (polPs[j].x - polPs[i].x) * (testP.y - polPs[i].y) / (polPs[j].y - polPs[i].y) + polPs[i].x)) {
+      c = !c;
+    }
+  };
+  return c;
+};
+
 // Math for getting rotation angle for a new laser to imitate reflection from the mirror
-function getNewLaserAngle(laserRotationAngle, mirrorRotationAngle){
-  return newLaserAngle = 2*mirrorRotationAngle - laserRotationAngle;
-}
+function newLaserAngle(laser, mirror){
+  // Determine the side of mirror, the laser has faced.
+  // For that purpose use mirror vertices and collision point, where laser has faced the mirror.
+  var mirVerts = verticesCoords(mirror);
+  // Add 5th element mirVerts[4]===mirVerts[0] into array, in order to be able to compare ([0] and [3]) pair.
+  mirVerts.push(mirVerts[0]);
+  var colPoint = { x: Math.round(laser.endPointX), y: Math.round(laser.endPointY) };
+  for (var i=0; i < 4; i++) {
+    // Define math bias as in pixels.
+    var bias = 3;
+    // toref
+    // Create fake polygon using 2 points and bias in order to determine which rectangle side collision point belongs to. 
+    if (Math.abs(mirVerts[i].y - mirVerts[i+1].y) < 20) {
+      var polygonPoints = [
+        { x: mirVerts[i].x, y: mirVerts[i].y + bias },
+        { x: mirVerts[i].x, y: mirVerts[i].y - bias },
+        { x: mirVerts[i+1].x, y: mirVerts[i+1].y - bias },
+        { x: mirVerts[i+1].x, y: mirVerts[i+1].y + bias }
+      ];
+    } else {
+      var polygonPoints = [
+        { x: mirVerts[i].x + bias, y: mirVerts[i].y },
+        { x: mirVerts[i].x - bias, y: mirVerts[i].y },
+        { x: mirVerts[i+1].x - bias, y: mirVerts[i+1].y },
+        { x: mirVerts[i+1].x + bias, y: mirVerts[i+1].y }
+      ];
+    };
+    if (pointInPolygon(polygonPoints, colPoint)) {
+      // Save vertices, between which the collision point is located. Stop the 'for' loop.
+      var rightVerts = [ mirVerts[i], mirVerts[i+1] ];
+      // alert('I work!'); // to del
+      break;
+    };
+  };
+  // Calculate rotation angle of determined mirror's side, the laser has faced.
+  // angle = ABS(x2-x1/y1-y2).
+  var mirRot = toDegrees(Math.atan(
+                        (rightVerts[1].x - rightVerts[0].x )/ 
+                        (rightVerts[0].y - rightVerts[1].y)));
+  var newLaserAngle = 2 * mirRot - laser.rotation;
+  //alert(newLaserAngle); //todel
+  return newLaserAngle;
+};
 
 // Elements rotation
 function rotate(elem, deg) {
   var defDeg = parseInt(elem.style.transform.slice(7));  
   elem.rotation = defDeg + deg;
   elem.style.transform = 'rotate(' + (defDeg + deg) + 'deg)';
-}
+};
 
 // Converts degrees to radians
 function toRad(deg) {
-  return deg*Math.PI/180;
+  return deg * Math.PI / 180;
 };
+
+// Converts radians to degrees 
+function toDegrees(rad) {
+  return rad * 180 / Math.PI;
+}
 
 // Clears the scene, deleting all lasers
 function clearScene() {
@@ -263,21 +374,57 @@ function clearScene() {
 
 // Blocks the scene if true is passed, unblocks if false
 function blockScene(boolean) {
-
+  // Cancel any element selection
   if (lastSelected) { lastSelected.style.border = '' };
+  // Save information about block/unblock of the scene variable
   blocked = boolean;
-
+  // Switch 'selectable' property of mirrors
   var mirrors = document.getElementsByClassName('mirror');
-  for (i=0; i < mirrors.length; i++) {
+  for (var i=0; i < mirrors.length; i++) {
     mirrors[i].selectable = !boolean;
-  }
-
+  };
+  // Switch 'selectable' property of laser gun
   laserGun.selectable = !boolean;
-
+  // Enable/disable drag'n'drop on mirrors
   var draggable = boolean? 'disable': 'enable';
   $('.mirror').draggable( draggable );
-
 }
+
+// Calculate page coordinates of the element bounding rectangle and returns object with left, top, right, bottom properties
+function getBoundingPageRect(elem) {
+  // If clause check if the required element is the background for optimization purposes. If yes, returns completed object,
+  // if this function was already called on background.
+  if (elem === background && background.boundingPageRect) { return background.boundingPageRect };
+  var clientCoords = elem.getBoundingClientRect();
+  var leftTop = toPageCoords(clientCoords.left, clientCoords.top);
+  var rightBot = toPageCoords(clientCoords.right, clientCoords.bottom);
+  var res = { 
+    left: leftTop.pageX, 
+    top: leftTop.pageY, 
+    right: rightBot.pageX, 
+    bottom: rightBot.pageY,
+    width: rightBot.pageX - leftTop.pageX,
+    height: rightBot.pageY - leftTop.pageY
+  };
+  // If background, save result as it's property.
+  if (elem === background) { background.boundingPageRect = res };
+  return res;
+}
+
+// Parse style.height of the element and return integer
+function getHeight(elem) {
+  return parseInt(elem.style.height)
+};
+
+// Parse style.width of the element and return integer
+function getWidth(elem) {
+  return parseInt(elem.style.width) 
+};
+
+// Parse style.borderWidth of the element and return integer
+function getBorderWidth(elem) {
+  return parseInt(elem.style.borderWidth) 
+};
 
 // *Objects generators*
 
@@ -287,8 +434,8 @@ function Mirror(x, y, rotation) {
 
   var mirror = document.createElement('div');
   mirror.rotation = rotation || 0;
-  mirror.style.cssText = "width: 3px; \
-                          height: 200px; \
+  mirror.style.cssText = "width: 30px; \
+                          height: 100px; \
                           background-color: blue; \
                           position: absolute; \
                           transform: rotate(" + mirror.rotation + "deg); \
@@ -311,7 +458,7 @@ function Wall(x, y, rotation, width, height) {
                         height: " + (height || 300) + "px; \
                         background-color: black; \
                         position: absolute; \
-                        transform: rotate(" + mirror.rotation + "deg); \
+                        transform: rotate(" + wall.rotation + "deg); \
                         transform-origin: 0% 0%; \
                         z-index: 30;";
   wall.style.left = x;
@@ -322,7 +469,7 @@ function Wall(x, y, rotation, width, height) {
   return wall;
 };
 
-for (i=1; i<=4; i++) {
+for (var i=1; i<=4; i++) {
   var mirror = new Mirror;
   background.appendChild(mirror);
   // Drag'n'drop using jQuery UI
@@ -332,7 +479,7 @@ for (i=1; i<=4; i++) {
     }
   });
 };
-background.appendChild(new Wall(250,0,90));
+background.appendChild(new Wall(250,0,0));
 background.appendChild(new Wall(500,300,0));
 
 // Lasers generator
@@ -346,18 +493,10 @@ function Laser(x, y, rotation) {
     this.style.height = (parseInt(this.style.height) + 1) + 'px';
   };
 
-  // Optimize rotation to the angle in range [0...360] degrees
-  laser.optimizeRotation = function(rotation) {
-    var optimizedRotation = rotation;
-    while (optimizedRotation < 0) { optimizedRotation += 360 };
-    while (optimizedRotation >= 360) { optimizedRotation -= 360 };
-    return optimizedRotation;
-  };
-
   // Checks if laser faced the mirror or wall
   laser.checkForElement = function(lastMirrorFaced) {
     var rect = this.getBoundingClientRect(), clientX, clientY;
-    // Defines the direction of the laser in order to get coordinates of it's end
+    // Determine the direction of the laser in order to get right coordinates of it's end
     var rot = this.rotation;
     var halfWidth = parseInt(this.style.width)/2;
     if (rot > 0 && rot < 90) {
@@ -389,6 +528,7 @@ function Laser(x, y, rotation) {
     var endCoords = toPageCoords(clientX, clientY);
     this.endPointX = endCoords.pageX;
     this.endPointY = endCoords.pageY;
+    // Catch 'Uncaught TypeError: Cannot read property 'className' of undefined', occuring when laser leaves browser client window
     try {
       var elemClass = currentElem.className;
     } catch(e) {
@@ -396,6 +536,7 @@ function Laser(x, y, rotation) {
       alert("Error! Laser is outside of the client window!"); //todel
       return 'error';
     }
+    // Return the string with element name faced, if any
     if ((elemClass.search('mirror') > -1) && ( lastMirrorFaced !== currentElem )) {
       //alert(lastMirrorFaced + " " + currentElem); // todel
       return 'mirror';
@@ -409,7 +550,7 @@ function Laser(x, y, rotation) {
   };
 
   // Laser object attributes
-  laser.rotation = laser.optimizeRotation(rotation);
+  laser.rotation = optimizeRotation(rotation);
   laser.style.cssText = "width: 1px; \
                         height: 0px; \
                         background-color: green; \
@@ -421,8 +562,8 @@ function Laser(x, y, rotation) {
   laser.style.top = y;
   laser.className = 'laser';
   laser.id = 'laser' + (++laserCount);
-  laser.endPointX = background.getPageCoordsOf().left + background.getBorderWidth() + x;
-  laser.endPointY = background.getPageCoordsOf().top + background.getBorderWidth() + y;
+  laser.endPointX = getBoundingPageRect(background).left + getBorderWidth(background) + x;
+  laser.endPointY = getBoundingPageRect(background).top + getBorderWidth(background) + y;
   laser.endPointElem = null;
 
   return laser;
@@ -462,8 +603,10 @@ document.onclick = function(e) {
 
 
 // todel, for test purposes
-for (i=0;i<3; i++) {
+for (var i=0;i<3; i++) {
   var p = document.createElement('p');
   p.textContent = "this is " + i + " paragraph!";
   document.body.appendChild(p);
 };
+
+
