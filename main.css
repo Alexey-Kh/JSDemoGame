@@ -1,0 +1,23 @@
+p, li {
+  text-align: justify;
+  margin: 10px;
+}
+ul {
+    list-style-type: none;
+  padding: 0px;
+}
+.button:hover {
+  background-color: #7f70d8;
+}
+.container {
+  margin-top: 20px;
+}
+.text-align-center {
+  text-align: center;
+}
+.menu>p:nth-of-type(1){
+  border: 1px solid black;
+  border-radius: 5px;
+  background-color: #E4E4E4;
+  padding: 5px 0px;
+}

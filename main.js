@@ -297,7 +297,8 @@ function Background() {
 function Menu() {
   var menu = document.createElement('div');
   menu.id = 'menu';
-  menu.style.cssText = "background-color: #E4E4E4; \
+  menu.className = 'menu';
+  menu.style.cssText = "background-color: #b5ace8; \
                         width: 300px; \
                         height: " + getHeight(background) + "px; \
                         left: " + getBoundingPageRect(background).right + "px; \
@@ -306,7 +307,7 @@ function Menu() {
                         z-index: 0; \
                         position: absolute; \
                         display: inline-block; \
-                        border: 1px solid black; \
+                        border: 2px solid black; \
                         border-radius: 5px; \
                         text-align: center;";
   return menu;
@@ -317,12 +318,16 @@ function Button(id, value) {
 
   var button = document.createElement('input');
   button.id = id;
+  button.className = 'button';
   button.type = 'button';
   button.value = value;
   button.style.cssText = "border: 1px solid black; \
                           border-radius: 5px; \
                           text-align: center; \
-                          font-size: 1em;";
+                          font-size: 1em; \
+                          height: 2em; \
+                          width: 5em; \
+                          margin: 10px;";
   return button;
 };
 
@@ -365,8 +370,8 @@ function Target() {
                           position: absolute; \
                           z-index: 50; \
                           background-color: red;'
-  target.style.left = getWidth(background) - size;  
-  target.style.top = getHeight(background) - size;
+  target.style.left = (getWidth(background) - size) + 'px';  
+  target.style.top = (getHeight(background) - size) + 'px';
   return target;
 };
 
@@ -381,8 +386,8 @@ function Mirror(x, y, rotation) {
                           position: absolute; \
                           transform: rotate(" + mirror.rotation + "deg); \
                           z-index: 20;";
-  mirror.style.left = x || 0;
-  mirror.style.top = y || 0;
+  mirror.style.left = (x || 0) + 'px';
+  mirror.style.top = (y || 0) + 'px';
   mirror.className = 'mirror';
   mirror.id = 'mirror' + (++mirrorCount);
   mirror.selectable = true;
@@ -401,11 +406,10 @@ function Wall(x, y, rotation, width, height) {
                         transform: rotate(" + wall.rotation + "deg); \
                         transform-origin: 0% 0%; \
                         z-index: 30;";
-  wall.style.left = x;
-  wall.style.top = y;
+  wall.style.left = x + 'px';
+  wall.style.top = y + 'px';
   wall.className = 'wall';
   wall.id = 'wall' + (++wallCount);
-  wall.selectable = true;
   return wall;
 };
 
@@ -484,8 +488,8 @@ function Laser(x, y, rotation) {
                         transform: rotate(" + laser.rotation + "deg); \
                         transform-origin: 0% 0%; \
                         z-index: 10;";
-  laser.style.left = x;
-  laser.style.top = y;
+  laser.style.left = x + 'px';
+  laser.style.top = y + 'px';
   laser.className = 'laser';
   laser.id = 'laser' + (++laserCount);
   laser.endPointX = getBoundingPageRect(background).left + getBorderWidth(background) + x;
@@ -528,11 +532,11 @@ document.onclick = function(e) {
 // *Create elements and add them to DOM*
 
 // todel, for test purposes
-for (var i=0;i<3; i++) {
-  var p = document.createElement('p');
-  p.textContent = "this is " + i + " paragraph!";
-  document.body.appendChild(p);
-};
+// for (var i=0;i<3; i++) {
+//   var p = document.createElement('p');
+//   p.textContent = "this is " + i + " paragraph!";
+//   document.body.appendChild(p);
+// };
 
 var container = document.createElement('div');
 container.className = 'container';
@@ -549,7 +553,7 @@ var target = Target();
 background.appendChild(target);
 
 for (var i=1; i<=2; i++) {
-  var mirror = new Mirror;
+  var mirror = new Mirror(i*40,50);
   background.appendChild(mirror);
   // Drag'n'drop using jQuery UI
   $('#mirror'+i).draggable({
@@ -565,6 +569,10 @@ background.appendChild(new Wall(500,300,0));
 var menu = Menu();
 container.appendChild(menu);
 container.style.height = getHeight(background) + "px";
+
+var menuTitle = document.createElement('h2');
+menuTitle.textContent = 'JavaScript Game Demo';
+menu.appendChild(menuTitle);
 
 var startButton = Button('start-button', 'Start')
 startButton.onclick = function(){
@@ -584,14 +592,25 @@ stopButton.onclick = function(){
 menu.appendChild(stopButton);
 
 var triesText = document.createElement('p');
+triesText.className = 'text-align-center';
 triesText.textContent = 'Tries: ' + tries;
 menu.appendChild(triesText);
 
+var menuTextDiv = document.createElement('div');
+menuTextDiv.innerHTML = "<p>The purpose of this game is to hit the target (red square) using laser gun and mirrors (blue lines). \
+The core idea is to use mirrors in order to navigate laser beam in required direction through reflection. \
+Laser beam can't penetrate walls (black objects) or reflect from them, so they must be avoided.</p>\
+<h3>Controls</h3>\
+<ul><li>- Player can drag mirrors using the mouse.</li>\
+    <li>- Player can rotate laser gun and mirrors. For that required object must be selected by left mouse click and then rotated\
+     with right and left arrow keys on the keyboard.</li>\
+    <li>- When mirrors are located and laser gun is pointed, \"Start\" button should be pressed. \"Stop\" button stops the process.</li>\
+</ul>";
+menu.appendChild(menuTextDiv);
+
 // todel, for test purposes
-for (var i=0;i<3; i++) {
-  var p = document.createElement('p');
-  p.textContent = "this is " + i + " paragraph!";
-  document.body.appendChild(p);
-};
-
-
+// for (var i=0;i<3; i++) {
+//   var p = document.createElement('p');
+//   p.textContent = "this is " + i + " paragraph!";
+//   document.body.appendChild(p);
+// };
