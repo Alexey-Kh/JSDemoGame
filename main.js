@@ -281,14 +281,8 @@ function getBorderWidth(elem) {
 function Background() {
   var background = document.createElement('div');
   background.id = 'background';
-  background.style.cssText = "background-color: #E4E4E4; \
-                              width: 900px; \
-                              height: 600px; \
-                              margin-left: 25px; \
-                              z-index: 0; \
-                              position: absolute; \
-                              display: inline-block; \
-                              float: left; \
+  background.style.cssText = "width: 900px; \
+                              height: 600px;  \
                               border: 2px solid black;"
   return background;
 };
@@ -298,18 +292,10 @@ function Menu() {
   var menu = document.createElement('div');
   menu.id = 'menu';
   menu.className = 'menu';
-  menu.style.cssText = "background-color: #b5ace8; \
-                        width: 300px; \
+  menu.style.cssText = "width: 300px; \
                         height: " + getHeight(background) + "px; \
                         left: " + getBoundingPageRect(background).right + "px; \
-                        top: " + getBoundingPageRect(background).top + "px; \
-                        margin-left: 5px; \
-                        z-index: 0; \
-                        position: absolute; \
-                        display: inline-block; \
-                        border: 2px solid black; \
-                        border-radius: 5px; \
-                        text-align: center;";
+                        top: " + getBoundingPageRect(background).top + "px;";
   return menu;
 };
 
@@ -321,13 +307,6 @@ function Button(id, value) {
   button.className = 'button';
   button.type = 'button';
   button.value = value;
-  button.style.cssText = "border: 1px solid black; \
-                          border-radius: 5px; \
-                          text-align: center; \
-                          font-size: 1em; \
-                          height: 2em; \
-                          width: 5em; \
-                          margin: 10px;";
   return button;
 };
 
@@ -344,7 +323,6 @@ function LaserGun() {
   laserGun.style.cssText = "width: " + width + "px; \
                             height: " + height + "px; \
                             left: " + left + "px; \
-                            position: absolute; \
                             transform: rotate(" + laserGun.rotation + "deg);";
   laserGun.barrelCoords = function() {
     // barrel x coord is located at 42/67 of laser gun width
@@ -366,10 +344,7 @@ function Target() {
   target.className = 'target';
   var size = 40;
   target.style.cssText = 'width: ' + size + 'px; \
-                          height: ' + size + 'px; \
-                          position: absolute; \
-                          z-index: 50; \
-                          background-color: red;'
+                          height: ' + size + 'px;';
   target.style.left = (getWidth(background) - size) + 'px';  
   target.style.top = (getHeight(background) - size) + 'px';
   return target;
@@ -382,10 +357,7 @@ function Mirror(x, y, rotation) {
   mirror.rotation = rotation || 0;
   mirror.style.cssText = "width: 30px; \
                           height: 100px; \
-                          background-color: blue; \
-                          position: absolute; \
-                          transform: rotate(" + mirror.rotation + "deg); \
-                          z-index: 20;";
+                          transform: rotate(" + mirror.rotation + "deg);";
   mirror.style.left = (x || 0) + 'px';
   mirror.style.top = (y || 0) + 'px';
   mirror.className = 'mirror';
@@ -401,11 +373,8 @@ function Wall(x, y, rotation, width, height) {
   wall.rotation = rotation;
   wall.style.cssText = "width: " + (width || 5) + "px; \
                         height: " + (height || 300) + "px; \
-                        background-color: black; \
-                        position: absolute; \
                         transform: rotate(" + wall.rotation + "deg); \
-                        transform-origin: 0% 0%; \
-                        z-index: 30;";
+                        transform-origin: 0% 0%;";
   wall.style.left = x + 'px';
   wall.style.top = y + 'px';
   wall.className = 'wall';
@@ -482,12 +451,9 @@ function Laser(x, y, rotation) {
   // Laser object attributes
   laser.rotation = optimizeRotation(rotation);
   laser.style.cssText = "width: 1px; \
-                        height: 0px; \
-                        background-color: green; \
-                        position: absolute; \
-                        transform: rotate(" + laser.rotation + "deg); \
-                        transform-origin: 0% 0%; \
-                        z-index: 10;";
+                         height: 0px; \
+                         transform: rotate(" + laser.rotation + "deg); \
+                         transform-origin: 0% 0%;";
   laser.style.left = x + 'px';
   laser.style.top = y + 'px';
   laser.className = 'laser';
@@ -540,7 +506,6 @@ document.onclick = function(e) {
 
 var container = document.createElement('div');
 container.className = 'container';
-container.cssText = "";
 document.body.appendChild(container);
 
 var background = Background();

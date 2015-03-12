@@ -3,21 +3,73 @@ p, li {
   margin: 10px;
 }
 ul {
-    list-style-type: none;
+  list-style-type: none;
   padding: 0px;
+}
+
+.container {
+  margin-top: 20px;
+}
+.button {
+  height: 2em;
+  width: 5em;
+  margin: 10px;
+  border: 1px solid black;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 1em;
 }
 .button:hover {
   background-color: #7f70d8;
 }
-.container {
-  margin-top: 20px;
+.lasergun {
+  position: absolute;
 }
+.target {
+  background-color: red;
+  position: absolute;
+  z-index: 50;
+}
+.mirror {
+  background-color: blue;
+  position: absolute;
+  z-index: 20;
+}
+.wall {
+  background-color: black;
+  position: absolute;
+  z-index: 30;
+}
+.laser {
+  background-color: green;
+  position: absolute;
+  z-index: 10;
+}
+
 .text-align-center {
   text-align: center;
 }
-.menu>p:nth-of-type(1){
+.menu>p:nth-of-type(1){  
+  padding: 5px 0px;
   border: 1px solid black;
   border-radius: 5px;
   background-color: #E4E4E4;
-  padding: 5px 0px;
+}
+#background {
+  margin-left: 25px;
+  display: inline-block;
+  float: left;
+  position: absolute;
+  z-index: 0;
+  background-color: #E4E4E4;
+}
+#menu {  
+  display: inline-block;  
+  margin-left: 5px;
+  background-color: #b5ace8;
+  position: absolute;  
+  z-index: 0;
+  border: 2px solid black;
+  border-radius: 5px;
+  text-align: center;
 }
