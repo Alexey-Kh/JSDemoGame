@@ -32,7 +32,6 @@ There were no aim to achieve cross-browser compatibility. The game was tested on
  - Remove bugs.
  - Write own drag'n'drop function.
  - Create game level designer.
- - Add information about game at the right menu.
  - Polish view.
  - Improve JS code structure.
 
