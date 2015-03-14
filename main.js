@@ -3,19 +3,19 @@ var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = fals
 // *Levels*
 
 var level1 = '\
-A====||=======||==Z \
-=====||===//==||=== \
-=====||=======||=== \
-==========||======= \
-==========||======= \
-=====//===||==//=== \
-==========||=======';
+A====|=========|===Z \
+=====|====/====|==== \
+=====|=========|==== \
+==========|========= \
+==========|========= \
+=====/====|====/==== \
+==========|=========';
 
 // *Functions*
 
 // Parse level string. Return object with width and height of the level, arrays with information about location of lasergun,
 // target, walls, mirrors. Objects have information about 'left' and 'top' properties of elements, mirrors also has 'width'
-// and 'height' properties. The width and height of 1 element of level is used as an unit of measurement.
+// and 'height' properties. The width and height of 1 cell (1 character in the level string) is used as an unit of measurement.
 // All elements in level string, except mirrors, will be transformed into single element. Mirrors will be concatenated,
 // if they are located near each other.
 function readLevel(level){
@@ -25,8 +25,8 @@ function readLevel(level){
     level[i] = level[i].split('');
   };
   // Count the width and height of level.
-  var widthElems = level[0].length;
-  var heightElems = level.length;
+  var levelWidth = level[0].length;
+  var levelHeight = level.length;
   // Create empty arrays for elements.
   var mirrors = [], walls = [], laserGuns = [], targets = [];
   // For loop for going through each line.
@@ -42,7 +42,7 @@ function readLevel(level){
         var width = 1, height = 1;
         // Variables for stopping while loops.
         var widthStopper = false, heightStopper = false;
-        // While loop to get the width of the current mirror object by checking next characters on this level line.
+        // While loop to get the width of the current mirror object by checking next cells on this level line.
         // If match, replace wall-character with another char, so that mirror object wouldn't be added in 
         // 'mirrors' array again during the 'for' loop.
         while (widthStopper === false) {
@@ -53,7 +53,7 @@ function readLevel(level){
             widthStopper = true;
           };
         };
-        // While loop to get the height of the current mirror object by checking characters at the same position 
+        // While loop to get the height of the current mirror object by checking cells at the same position 
         // under this level line. If match, replace wall-character with another char, so that mirror object wouldn't be
         // added in 'mirrors' array again during the 'for' loop.
         while (heightStopper === false) {
@@ -75,16 +75,53 @@ function readLevel(level){
       };
     };
   };
-  return { widthElems: widthElems,
-           heightElems: heightElems, 
+  return { levelWidth: levelWidth,
+           levelHeight: levelHeight, 
            walls: walls, 
            mirrors: mirrors, 
            laserGuns: laserGuns, 
            targets: targets };
 };
-console.log(readLevel(level1)); // todel
 
-
+// Draw all the elements according to the information, got from realLevel function.
+function drawLevel(level){
+  // Parse level.
+  var parsedLvl = readLevel(level);
+  // The width of the background.
+  var backW = getWidth(background);
+  // The height of the background.
+  var backH = getHeight(background);
+  // The width of 1 level cell.
+  var elemW = backW/parsedLvl.levelWidth;
+  // The height of 1 level cell.
+  var elemH = backH/parsedLvl.levelHeight;
+  // Draw laser guns.
+  parsedLvl.laserGuns.forEach(function(item) {
+    var l = LaserGun(item.left * elemW, item.top * elemH);
+    background.appendChild(l);
+  });
+  // Draw targets.
+  parsedLvl.targets.forEach(function(item) {
+    var t = Target(item.left * elemW, item.top * elemH);    
+    background.appendChild(t);
+  });
+  // Draw walls.
+  parsedLvl.walls.forEach(function(item) {
+    var w = Wall(item.left * elemW, item.top * elemH, elemW, elemH);
+    background.appendChild(w);
+  });
+  // Draw mirrors.
+  parsedLvl.mirrors.forEach(function(item) {
+    var m = Mirror(item.left * elemW, item.top * elemH, item.width * elemW, item.height * elemH);
+    background.appendChild(m);
+  });
+  // Turn on mirrors dragging with jQuery UI.
+  $('.mirror').draggable({
+    drag: function(event, ui) {
+      clearScene();
+    }
+  });
+};
 
 // Transforms client coordinates to page coordinates
 
@@ -144,7 +181,7 @@ function fire(x, y, deg, lastMirrorFaced) {
         break;
       case 'target':
         alert("You've hit the target on " + tries + " try!"); //todel   
-        tries = 0;     
+        tries = 0;
         blockScene(false);
         break;
       case 'error':              
@@ -316,6 +353,7 @@ function blockScene(boolean) {
     mirrors[i].selectable = !boolean;
   };
   // Switch 'selectable' property of laser gun
+  var laserGun = document.getElementById('lasergun');
   laserGun.selectable = !boolean;
   // Enable/disable drag'n'drop on mirrors
   var draggable = boolean? 'disable': 'enable';
@@ -395,15 +433,16 @@ function Button(id, value) {
 };
 
 // Lasergun picture
-function LaserGun() {
+function LaserGun(left, top) {
   var laserGun = document.createElement('img');
   laserGun.className = 'lasergun';
+  laserGun.id = 'lasergun';
   laserGun.rotation = -90;
   laserGun.src = 'assets/lasergun.png';
   var width = 45;  
   // height/width = 1.31
-  var height = Math.round(width*1.31);
-  var left = (height-width)/2;
+  var height = Math.round(width*1.31) + top;
+  var left = (height-width)/2 + left;
   laserGun.style.cssText = "width: " + width + "px; \
                             height: " + height + "px; \
                             left: " + left + "px; \
@@ -423,24 +462,24 @@ function LaserGun() {
 };
 
 // Target generator
-function Target() {
+function Target(left, top) {
   var target = document.createElement('div');
   target.className = 'target';
   var size = 40;
   target.style.cssText = 'width: ' + size + 'px; \
                           height: ' + size + 'px;';
-  target.style.left = (getWidth(background) - size) + 'px';  
-  target.style.top = (getHeight(background) - size) + 'px';
+  target.style.left = left + 'px';  
+  target.style.top = top + 'px';
   return target;
 };
 
 // Mirrors generator
-function Mirror(x, y, rotation) {
+function Mirror(x, y, width, height, rotation) {
 
   var mirror = document.createElement('div');
   mirror.rotation = rotation || 0;
-  mirror.style.cssText = "width: 30px; \
-                          height: 100px; \
+  mirror.style.cssText = "width: " + (width || 30) + "px; \
+                          height:" + (height || 100) + "px; \
                           transform: rotate(" + mirror.rotation + "deg);";
   mirror.style.left = (x || 0) + 'px';
   mirror.style.top = (y || 0) + 'px';
@@ -451,14 +490,14 @@ function Mirror(x, y, rotation) {
 };
 
 // Walls generator
-function Wall(x, y, rotation, width, height) {
+function Wall(x, y, width, height) {
 
   var wall = document.createElement('div');
-  wall.rotation = rotation;
+  // wall.rotation = rotation || 0;
   wall.style.cssText = "width: " + (width || 5) + "px; \
-                        height: " + (height || 300) + "px; \
-                        transform: rotate(" + wall.rotation + "deg); \
-                        transform-origin: 0% 0%;";
+                        height: " + (height || 300) + "px;";
+                        // transform: rotate(" + wall.rotation + "deg); \
+                        // transform-origin: 0% 0%;";
   wall.style.left = x + 'px';
   wall.style.top = y + 'px';
   wall.className = 'wall';
@@ -595,25 +634,7 @@ document.body.appendChild(container);
 var background = Background();
 container.appendChild(background);
 
-var laserGun = LaserGun();
-background.appendChild(laserGun);
-
-var target = Target();
-background.appendChild(target);
-
-for (var i=1; i<=2; i++) {
-  var mirror = new Mirror(i*40,50);
-  background.appendChild(mirror);
-  // Drag'n'drop using jQuery UI
-  $('#mirror'+i).draggable({
-    drag: function(event, ui) {
-      clearScene();
-    }
-  });
-};
-
-background.appendChild(new Wall(250,0,0));
-background.appendChild(new Wall(500,300,0));
+drawLevel(level1);
 
 var menu = Menu();
 container.appendChild(menu);
@@ -630,6 +651,7 @@ startButton.onclick = function(){
   tries++;
   triesText.textContent = 'Tries: ' + tries;
   clearScene();
+  var laserGun = document.getElementById('lasergun');
   fire(laserGun.barrelCoords().x, laserGun.barrelCoords().y, laserGun.rotation);
 };
 menu.appendChild(startButton);
