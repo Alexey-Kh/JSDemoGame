@@ -1,6 +1,90 @@
 var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = false, clearedScene = true, tries = 0;
 
+// *Levels*
+
+var level1 = '\
+A====||=======||==Z \
+=====||===//==||=== \
+=====||=======||=== \
+==========||======= \
+==========||======= \
+=====//===||==//=== \
+==========||=======';
+
 // *Functions*
+
+// Parse level string. Return object with width and height of the level, arrays with information about location of lasergun,
+// target, walls, mirrors. Objects have information about 'left' and 'top' properties of elements, mirrors also has 'width'
+// and 'height' properties. The width and height of 1 element of level is used as an unit of measurement.
+// All elements in level string, except mirrors, will be transformed into single element. Mirrors will be concatenated,
+// if they are located near each other.
+function readLevel(level){
+  // Cut level string into array of arrays, consisting of single characters.
+  level = level.split(' ');
+  for(var i = 0; i < level.length; i++) {
+    level[i] = level[i].split('');
+  };
+  // Count the width and height of level.
+  var widthElems = level[0].length;
+  var heightElems = level.length;
+  // Create empty arrays for elements.
+  var mirrors = [], walls = [], laserGuns = [], targets = [];
+  // For loop for going through each line.
+  for(var i = 0; i < level.length; i++) {
+    // For loop for going through each character of the line.
+    for (var j = 0; j < level[i].length; j++) {
+      // Check for walls. Add in 'walls' array if match.
+      if (level[i][j] === '|') {
+        walls.push({ left: j, top: i });
+      // Check for mirrors. Add in 'mirrors' array if match.
+      } else if (level[i][j] === '/') {
+        // Width and height of the mirror object.
+        var width = 1, height = 1;
+        // Variables for stopping while loops.
+        var widthStopper = false, heightStopper = false;
+        // While loop to get the width of the current mirror object by checking next characters on this level line.
+        // If match, replace wall-character with another char, so that mirror object wouldn't be added in 
+        // 'mirrors' array again during the 'for' loop.
+        while (widthStopper === false) {
+          if (level[i][j+width] === '/') {
+            level[i][j+width] = '_';            
+            width++;
+          } else {
+            widthStopper = true;
+          };
+        };
+        // While loop to get the height of the current mirror object by checking characters at the same position 
+        // under this level line. If match, replace wall-character with another char, so that mirror object wouldn't be
+        // added in 'mirrors' array again during the 'for' loop.
+        while (heightStopper === false) {
+          if (level[i+height][j] === '/') {
+            level[i+height][j] = '_';            
+            height++;            
+          } else {
+            heightStopper = true;
+          };
+        };
+        // Add completed mirror into 'mirrors' array.
+        mirrors.push({ left: j, top: i, width: width, height: height });        
+      // Check for laser guns. Add in 'laserGuns' array if match.
+      } else if (level[i][j] === 'A') {
+        laserGuns.push({ left: j, top: i });        
+      // Check for targets. Add in 'targets' array if match.
+      } else if (level[i][j] === 'Z') {
+        targets.push({ left: j, top: i });
+      };
+    };
+  };
+  return { widthElems: widthElems,
+           heightElems: heightElems, 
+           walls: walls, 
+           mirrors: mirrors, 
+           laserGuns: laserGuns, 
+           targets: targets };
+};
+console.log(readLevel(level1)); // todel
+
+
 
 // Transforms client coordinates to page coordinates
 
