@@ -2,6 +2,12 @@ var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = fals
 
 // *Levels*
 
+// Strings for generating levels. Every single line should end with whitespace.
+// A - laser gun;
+// Z - target;
+// | - wall;
+// / - mirror.
+
 var level1 = '\
 A====|=========|===Z \
 =====|====/====|==== \
