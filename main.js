@@ -9,6 +9,15 @@ var lastSelected, mirrorCount = 0, wallCount = 0, laserCount = 0, blocked = fals
 // / - mirror.
 
 var level1 = '\
+A======|============ \
+=======|====//====== \
+=======|============ \
+=======|=====|====== \
+=============|====== \
+======//=====|====== \
+=============|=====Z';
+
+var level2 = '\
 A====|=========|===Z \
 =====|====/====|==== \
 =====|=========|==== \
@@ -16,6 +25,47 @@ A====|=========|===Z \
 ==========|========= \
 =====/====|====/==== \
 ==========|=========';
+
+var level3 = '\
+A=================== \
+==================== \
+|||||||||||||=====/= \
+=======|============ \
+=======|=/========== \
+Z======|====|||||||| \
+=========/========== \
+====================';
+
+var level4 = '\
+==================== \
+==/================Z \
+======|||||||======= \
+============|||||=== \
+|||=============|||| \
+A=||||============== \
+=====||||||||||===/= \
+==================== \
+========/=========== \
+====================';
+
+var level5 = '\
+A===|====|====|====Z \
+====|=/=====/=|===== \
+====|====|====|===== \
+====|====|====|===== \
+====|====|====|===== \
+=========|========== \
+====/====|====/===== \
+====================';
+
+var level6 = '\
+A==================Z \
+==================== \
+==================== \
+==================== \
+==================== \
+==================== \
+====================';
 
 // *Functions*
 
@@ -46,28 +96,26 @@ function readLevel(level){
       } else if (level[i][j] === '/') {
         // Width and height of the mirror object.
         var width = 1, height = 1;
-        // Variables for stopping while loops.
-        var widthStopper = false, heightStopper = false;
         // While loop to get the width of the current mirror object by checking next cells on this level line.
         // If match, replace wall-character with another char, so that mirror object wouldn't be added in 
         // 'mirrors' array again during the 'for' loop.
-        while (widthStopper === false) {
-          if (level[i][j+width] === '/') {
+        while (true) {
+          if (level[i] && level[i][j+width] === '/') {
             level[i][j+width] = '_';            
             width++;
           } else {
-            widthStopper = true;
+            break;
           };
         };
         // While loop to get the height of the current mirror object by checking cells at the same position 
         // under this level line. If match, replace wall-character with another char, so that mirror object wouldn't be
         // added in 'mirrors' array again during the 'for' loop.
-        while (heightStopper === false) {
-          if (level[i+height][j] === '/') {
+        while (true) {
+          if (level[i+height] && level[i+height][j] === '/') {
             level[i+height][j] = '_';            
             height++;            
           } else {
-            heightStopper = true;
+            break;
           };
         };
         // Add completed mirror into 'mirrors' array.
@@ -447,11 +495,12 @@ function LaserGun(left, top) {
   laserGun.src = 'assets/lasergun.png';
   var width = 45;  
   // height/width = 1.31
-  var height = Math.round(width*1.31) + top;
+  var height = Math.round(width*1.31);
   var left = (height-width)/2 + left;
   laserGun.style.cssText = "width: " + width + "px; \
                             height: " + height + "px; \
                             left: " + left + "px; \
+                            top: " + top + "px; \
                             transform: rotate(" + laserGun.rotation + "deg);";
   laserGun.barrelCoords = function() {
     // barrel x coord is located at 42/67 of laser gun width
@@ -640,7 +689,7 @@ document.body.appendChild(container);
 var background = Background();
 container.appendChild(background);
 
-drawLevel(level1);
+drawLevel(level4);
 
 var menu = Menu();
 container.appendChild(menu);
