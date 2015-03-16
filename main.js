@@ -41,11 +41,11 @@ var level4 = '\
 ==/================Z \
 ======|||||||======= \
 ============|||||=== \
-|||=============|||| \
-A=||||============== \
-=====||||||||||===/= \
-==================== \
-========/=========== \
+||||============|||| \
+A==|||============== \
+=====||||||||||===== \
+==================/= \
+====/=============== \
 ====================';
 
 var level5 = '\
@@ -496,7 +496,8 @@ function LaserGun(left, top) {
   var width = 45;  
   // height/width = 1.31
   var height = Math.round(width*1.31);
-  var left = (height-width)/2 + left;
+  var left = (height-width)/2 + (left || 0);
+  var top = top || 0;
   laserGun.style.cssText = "width: " + width + "px; \
                             height: " + height + "px; \
                             left: " + left + "px; \
@@ -505,11 +506,11 @@ function LaserGun(left, top) {
   laserGun.barrelCoords = function() {
     // barrel x coord is located at 42/67 of laser gun width
     var angleRad = toRad(this.rotation);
-    var x = width*42/67- width/2;
+    var x = width*42/67 - width/2;
     var y = height*0.45;
     // get x and y according to rotation angle
-    var newX = left + width/2 + x*Math.cos(angleRad) - y*Math.sin(angleRad);
-    var newY = height/2 + y*Math.cos(angleRad) + x*Math.sin(angleRad);
+    var newX = width/2 + x*Math.cos(angleRad) - y*Math.sin(angleRad) + left;
+    var newY = height/2 + y*Math.cos(angleRad) + x*Math.sin(angleRad) + top;
     return { x: newX, y: newY };
   };
   laserGun.selectable = true;
@@ -567,7 +568,7 @@ function Laser(x, y, rotation) {
 
   // Laser object methods
   laser.increaseHeight = function() {
-    this.style.height = (parseInt(this.style.height) + 1) + 'px';
+    this.style.height = (parseInt(this.style.height) + 2) + 'px';
   };
 
   // Checks if laser faced the mirror or wall
@@ -707,7 +708,8 @@ startButton.onclick = function(){
   triesText.textContent = 'Tries: ' + tries;
   clearScene();
   var laserGun = document.getElementById('lasergun');
-  fire(laserGun.barrelCoords().x, laserGun.barrelCoords().y, laserGun.rotation);
+  var barrelCoords = laserGun.barrelCoords();
+  fire(barrelCoords.x, barrelCoords.y, laserGun.rotation);
 };
 menu.appendChild(startButton);
 
